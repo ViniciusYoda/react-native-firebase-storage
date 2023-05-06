@@ -5,18 +5,11 @@ import { CartaoInfo } from "../../componentes/CartaoInfo";
 import { NovoPostBotao } from "../../componentes/NovoPostBotao";
 import { pegarPostsTempoReal } from "../../servicos/firestore";
 import estilos from "./estilos";
-import { storage } from "../../config/firebase";
-import { ref, getDownloadURL }  from 'firebase/storage'
 
 export default function Principal({ navigation }) {
     const [posts, setPosts] = useState([]);
 
     useEffect(() => {
-        const imagemRef = ref(storage, 'img4.png')
-
-        getDownloadURL(imagemRef).then((url) => {
-            console.log(url)
-        })
 
         pegarPostsTempoReal(setPosts);
     },[])
@@ -24,11 +17,7 @@ export default function Principal({ navigation }) {
     return (
         <View style={estilos.container}>
             <Cabecalho />
-            <Image
-            
-            source={{uri: ''}}
-            style={{}}
-            />
+
             <ScrollView style={estilos.scroll} showsVerticalScrollIndicator={false}>
 
                 {posts?.map((item) => (
@@ -37,6 +26,7 @@ export default function Principal({ navigation }) {
                         titulo={item.titulo}  
                         fonte={item.fonte} 
                         descricao={item.descricao} 
+                        imagem={item.imagemUrl}
                         acao={() => navigation.navigate("Post", { item })}
                     />
                 ))}

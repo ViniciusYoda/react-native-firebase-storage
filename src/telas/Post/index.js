@@ -5,6 +5,9 @@ import estilos from "./estilos";
 import { entradas } from "./entradas";
 import { alteraDados } from "../../utils/comum";
 import { IconeClicavel } from "../../componentes/IconeClicavel";
+import { salvarImagem } from "../../servicos/storage";
+
+const imagemGalaxia = 'https://img.freepik.com/fotos-gratis/fundo-de-galaxia-espacial_53876-93121.jpg?w=740&t=st=1683392363~exp=1683392963~hmac=5ca077e09974f616ee2e20693f22369e9e16410c6245d28da9e03ef6255f022a'
 
 
 export default function Post({ navigation, route }) {
@@ -14,19 +17,25 @@ export default function Post({ navigation, route }) {
     const [post, setPost] = useState({
         titulo: item?.titulo || "",
         fonte: item?.fonte || "",
-        descricao: item?.descricao || ""
+        descricao: item?.descricao || "",
+        imagemUrl: item?.imagemUrl || null
     });
 
     async function salvar() {
         setDesabilitarEnvio(true);
+
+        const url = await salvarImagem(imagemGalaxia, 'galaxia');
+
         if (item) {
             await atualizarPost(item.id, post);
         } else {
-            await salvarPost(post);
+            await salvarPost({...post, imagemUrl: url});
         }
         
         navigation.goBack();
     }
+
+
 
     return (
         <View style={estilos.container}>
