@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { View, Text, TextInput, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Touchable } from "react-native";
 import { salvarPost, atualizarPost, deletarPost } from "../../servicos/firestore";
 import estilos from "./estilos";
 import { entradas } from "./entradas";
 import { alteraDados } from "../../utils/comum";
 import { IconeClicavel } from "../../componentes/IconeClicavel";
 import { salvarImagem } from "../../servicos/storage";
+import * as ImagemPicker from 'expo-imagem-picker';
 
-const imagemGalaxia = 'https://img.freepik.com/fotos-gratis/fundo-de-galaxia-espacial_53876-93121.jpg?w=740&t=st=1683392363~exp=1683392963~hmac=5ca077e09974f616ee2e20693f22369e9e16410c6245d28da9e03ef6255f022a'
+import uploadImagemPadrao from '../../assets/uploadImagemPadrao.jpeg'
 
 
 export default function Post({ navigation, route }) {
     const [desabilitarEnvio, setDesabilitarEnvio] = useState(false);
     const { item } = route?.params || {};
+
+    const [imagem, setImagem] = useState(null);
 
     const [post, setPost] = useState({
         titulo: item?.titulo || "",
@@ -24,18 +27,39 @@ export default function Post({ navigation, route }) {
     async function salvar() {
         setDesabilitarEnvio(true);
 
-        const url = await salvarImagem(imagemGalaxia, 'galaxia');
-
         if (item) {
             await atualizarPost(item.id, post);
-        } else {
-            await salvarPost({...post, imagemUrl: url});
+            return  navigation.goBack();
+        } 
+        const idPost = await salvarPost({
+            ...post,
+            imagemUrl: ''
+        });
+        navigation.goBack()
+        if(imagem !=null) {
+            const url = await salvarImagem(imagem, idPost);
+            await atualizarPost(idPost, {
+                imagemUrl: url
+            });
         }
-        
-        navigation.goBack();
+
     }
 
+    async function escolherImagemDaGaleria(){
+        let result = await ImagemPicker.launchImagemLibraryAsync({
+            mediaTypes: ImagemPicker.
+            MediaTypesOptions.ALL,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
 
+        console.log(result);
+
+        if(!result.canceled){
+            setImagem(result.assets[0].uri);
+        }
+    }
 
     return (
         <View style={estilos.container}>
@@ -69,6 +93,16 @@ export default function Post({ navigation, route }) {
                         />
                     </View>
                 ))}
+
+                <TouchableOpacity 
+                    style={estilos.imagem}
+                    onPress={escolherImagemDaGaleria}
+                >
+                    <Image 
+                        source={ imagem ? { uri: imagem } : uploadImagemPadrao}
+                        style={estilos.imagem} 
+                    />
+                </TouchableOpacity>
             </ScrollView>
 
             <TouchableOpacity style={estilos.botao} onPress={salvar} disabled={desabilitarEnvio}>
