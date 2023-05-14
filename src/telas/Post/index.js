@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Touchable } from "react-native";
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Touchable, LogBox } from "react-native";
 import { salvarPost, atualizarPost, deletarPost } from "../../servicos/firestore";
 import estilos from "./estilos";
 import { entradas } from "./entradas";
-import { alteraDados } from "../../utils/comum";
+import { alteraDados, escolherImagemDaGaleria, verificarItens } from "../../utils/comum";
 import { IconeClicavel } from "../../componentes/IconeClicavel";
 import { deletarImagem, salvarImagem } from "../../servicos/storage";
-import * as ImagemPicker from 'expo-imagem-picker';
+
 
 import uploadImagemPadrao from '../../assets/uploadImagemPadrao.jpeg'
 import { MenuSelecaoInferior } from "../../componentes/MenuSelecaoInferior";
 
+LogBox.ignoreAllLogs()
 
 export default function Post({ navigation, route }) {
     const [desabilitarEnvio, setDesabilitarEnvio] = useState(false);
@@ -30,12 +31,15 @@ export default function Post({ navigation, route }) {
         setDesabilitarEnvio(true);
 
         if (item) {
-            await verificarAlteracaoPost()
+            if(!verificarItens(post.imagemUrl, imagem)){
+                atualizarPostComImagem(item.id)
+            }
+            atualizarPost(item.id, post)
             return  navigation.goBack();
         } 
         const idPost = await salvarPost({
             ...post,
-            imagemUrl: ''
+            imagemUrl: imagem ? '' : null
         });
         navigation.goBack()
         if(imagem !=null) {
@@ -51,39 +55,23 @@ export default function Post({ navigation, route }) {
         });
     }
 
-    async function verificarAlteracaoPost(){
-        if(post.imagemUrl != imagem){
-            atualizarPostComImagem(item.id)
-        }
-        else {
-            atualizarPost(item.id, post)
-        }
-    }
-
-    async function escolherImagemDaGaleria(){
-        let result = await ImagemPicker.launchImagemLibraryAsync({
-            mediaTypes: ImagemPicker.
-            MediaTypesOptions.ALL,
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 1,
-        });
-
-        console.log(result);
-
-        if(!result.canceled){
-            setImagem(result.assets[0].uri);
-        }
-    }
-
     async function removerImagemPost(){
         if(!item) return
-        if(deletarImagem(item.id)){
+        if(await deletarImagem(item.id)){
             await atualizarPost(item.id, {
                 imagemUrl: null
             });
             navigation.goBack()
         }
+    }
+
+    async function excluirPostCompleto(){
+        if(!item) return 
+        deletarPost(item.id); 
+        if(item.imagemUrl != null){
+            deletarImagem(item.id)
+        }
+        navigation.goBack()
     }
 
     return (
@@ -92,7 +80,7 @@ export default function Post({ navigation, route }) {
                 <Text style={estilos.titulo}>{item ? "Editar post" : "Novo Post"}</Text>
                 <IconeClicavel 
                     exibir={!!item} 
-                    onPress={() => {deletarPost(item.id); navigation.goBack()}}
+                    onPress={excluirPostCompleto}
                     iconeNome="trash-2" 
                 />
             </View>
@@ -134,7 +122,7 @@ export default function Post({ navigation, route }) {
                 <Text style={estilos.textoBotao}>Salvar</Text>
             </TouchableOpacity>
             <MenuSelecaoInferior setMostrarMenu={setMostrarMenu} mostrarMenu={mostrarMenu}>
-                            <TouchableOpacity style={estilos.opcao} onPress={escolherImagemDaGaleria}>
+                            <TouchableOpacity style={estilos.opcao} onPress={() => escolherImagemDaGaleria(setImagem)}>
                                 <Text>Adicionar Foto</Text>
                                 <Text> &#128247;</Text>
                             </TouchableOpacity>

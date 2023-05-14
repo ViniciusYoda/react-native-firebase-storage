@@ -1,3 +1,5 @@
+import * as ImagemPicker from 'expo-imagem-picker';
+
 // funcao para adicionar um novo item na lista
 export const alteraDados = (variavel, valor, dados, setDados) => {
   setDados({
@@ -18,4 +20,22 @@ export function verificaSeTemEntradaVazia(dados, setDados) {
     }
   }
   return false
+}
+
+export  async function escolherImagemDaGaleria(setImagem){
+  let result = await ImagemPicker.launchImagemLibraryAsync({
+      mediaTypes: ImagemPicker.
+      MediaTypesOptions.ALL,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+  });
+
+  if(!result.canceled){
+      setImagem(result.assets[0].uri);
+  }
+}
+
+export function verificarItens(item1, item2){
+  return item1 == item2;
 }
